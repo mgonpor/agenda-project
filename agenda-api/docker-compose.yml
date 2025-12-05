@@ -1,0 +1,51 @@
+version: "3.8"
+name: "agenda"
+services:
+  api:
+    build: .
+    container_name: agenda-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JWT_SECRET: 'VEi9Wp1u61Yt9c+/gh7MEiOqJYIvYl9orMwOdtJaies='
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/agenda
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      - db
+    restart: unless-stopped
+  db:
+    image: mariadb
+    container_name: agenda-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: agenda
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql/data
+    healthcheck:
+      test: [ "CMD", "mariadb-admin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: agenda-pmy
+    links:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "8088:80"
+    depends_on:
+      - db
+volumes:
+  dbdata:
