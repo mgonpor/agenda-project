@@ -1,50 +1,122 @@
-# Welcome to your Expo app 👋
+# Desarrollo Local - Agenda App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## 🚀 Inicio Rápido (Quick Start)
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+### 1. Instalar dependencias
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Configurar .env
+```bash
+# Copia el ejemplo
+cp .env.example .env
 
-## Learn more
+# Edita .env con tu configuración
+# Para desarrollo local:
+EXPO_PUBLIC_API_URL=http://localhost:8080
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### 3. Iniciar desarrollo
+```bash
+npm start
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### 4. Abrir la app
+- Presiona `w` para abrir en navegador web
+- Presiona `a` para Android emulator
+- Escanea QR con Expo Go en tu teléfono
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## 📍 Dónde Corre la App
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Frontend (Expo)
+- **Web:** `http://localhost:8081`
+- **Metro Bundler:** `http://localhost:8081`
+- **Expo DevTools:** Se abre automáticamente en el navegador
+
+### Backend (Spring Boot)
+- **API:** `http://localhost:8080`
+- Debe estar corriendo antes de iniciar el frontend
+
+---
+
+## 🔧 Configuración de URLs
+
+### Desarrollo en Web
+```bash
+# .env
+EXPO_PUBLIC_API_URL=http://localhost:8080
+```
+
+### Desarrollo en Android Emulator
+```bash
+# .env
+EXPO_PUBLIC_API_URL=http://10.0.2.2:8080
+```
+⚠️ `10.0.2.2` es la IP que Android Emulator usa para `localhost` de tu PC
+
+### Desarrollo en Teléfono Físico
+```bash
+# .env
+# Usa la IP local de tu PC (encuentra con ipconfig)
+EXPO_PUBLIC_API_URL=http://192.168.1.X:8080
+```
+
+Para encontrar tu IP:
+```bash
+ipconfig
+# Busca "IPv4 Address"
+```
+
+---
+
+## 📝 Scripts Disponibles
+
+```bash
+# Iniciar servidor de desarrollo
+npm start
+
+# Iniciar en web directamente
+npm run web
+
+# Limpiar caché
+npx expo start --clear
+
+# Ver en Android
+npm run android
+
+# Ver en iOS (solo Mac)
+npm run ios
+```
+
+---
+
+## 🐛 Problemas Comunes
+
+### "Network request failed"
+✅ Verifica que el backend esté corriendo en `localhost:8080`
+✅ Verifica la URL en `.env`
+✅ Si usas Android Emulator, usa `http://10.0.2.2:8080`
+
+### Variables de entorno no se actualizan
+✅ Reinicia con: `npx expo start --clear`
+
+### CORS errors
+✅ Configura CORS en tu backend Spring Boot para permitir `http://localhost:8081`
+
+---
+
+## ✅ Checklist
+
+Antes de desarrollar:
+- [ ] Backend corriendo en `localhost:8080`
+- [ ] `.env` configurado
+- [ ] `npm install` ejecutado
+- [ ] `npm start` corriendo
+- [ ] Puedes hacer login
+
+---
+
+Para más detalles, ver `DESARROLLO_LOCAL.md`
