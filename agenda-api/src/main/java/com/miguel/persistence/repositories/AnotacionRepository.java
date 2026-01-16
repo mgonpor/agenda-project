@@ -14,4 +14,6 @@ public interface AnotacionRepository extends JpaRepository<Anotacion, Integer> {
     Optional<Anotacion> findByIdGrupoAndFecha(int idGrupo, LocalDate fecha);
 
     boolean existsByIdAndIdGrupo(int id, int idGrupo);
+
+    Optional<Anotacion> findByIdAndIdGrupo();
 }

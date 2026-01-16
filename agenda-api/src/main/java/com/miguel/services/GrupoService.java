@@ -2,14 +2,15 @@ package com.miguel.services;
 
 import com.miguel.persistence.entities.Grupo;
 import com.miguel.persistence.repositories.GrupoRepository;
-import com.miguel.services.dtos.GrupoRequest;
-import com.miguel.services.dtos.GrupoResponse;
+import com.miguel.services.dtos.*;
+import com.miguel.services.exceptions.ClaseException;
 import com.miguel.services.exceptions.GrupoException;
 import com.miguel.services.exceptions.GrupoNotFoundException;
 import com.miguel.services.mappers.GrupoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,6 +19,12 @@ public class GrupoService {
 
     @Autowired
     private GrupoRepository grupoRepository;
+
+    @Autowired
+    private ClaseService claseService;
+
+    @Autowired
+    private AnotacionService anotacionService;
 
     public List<GrupoResponse> getGrupos(int idUsuario){
         return grupoRepository.findByIdUsuario(idUsuario).stream()
@@ -31,12 +38,6 @@ public class GrupoService {
             throw new GrupoNotFoundException("Grupo no encontrado");
         }
         return GrupoMapper.toDto(grupo.get());
-    }
-
-    public List<GrupoResponse> getGruposByNombre(String nombre, int idUsuario){
-        return grupoRepository.findByIdUsuarioAndNombreContainingIgnoreCase(idUsuario, nombre).stream()
-                .map(GrupoMapper::toDto)
-                .toList();
     }
 
     public GrupoResponse createGrupo(GrupoRequest grupoRequest, int idUsuario){
@@ -79,29 +80,78 @@ public class GrupoService {
 
         return nombre;
     }
-
     // OTROS
-    public GrupoResponse updateNombre(int id, String nombre, int idUsuario){
-        Optional<Grupo> grupo = grupoRepository.findByIdAndIdUsuario(id, idUsuario);
-        if(grupo.isEmpty()){
+    public List<GrupoResponse> getGruposByNombre(String nombre, int idUsuario){
+        return grupoRepository.findByIdUsuarioAndNombreContainingIgnoreCase(idUsuario, nombre).stream()
+                .map(GrupoMapper::toDto)
+                .toList();
+    }
+
+    // CRUDS Clase
+    public List<ClaseResponse> findClasesByGrupo(int idGrupo, int idUsuario){
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
             throw new GrupoNotFoundException("Grupo no encontrado");
         }
-        if(grupoRepository.existsByIdUsuarioAndNombreIgnoreCase(idUsuario, nombre)){
-            throw new GrupoException("Grupo con nombre ya existente");
-        }
-        if(nombre == null || nombre.isBlank()){
-            throw new GrupoException("El nombre no puede estar vacio");
-        }
 
-        grupo.get().setNombre(nombre);
-        grupoRepository.save(grupo.get());
-
-        return GrupoMapper.toDto(grupo.get());
+        return this.claseService.findByGrupo(idGrupo);
     }
 
-    // Para Anotacion y Clase
-    public boolean perteneceAUsuario(int idGrupo, int idUsuario) {
-        return grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario);
+    public ClaseResponse findClase(int idGrupo, int idClase, int idUsuario){
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+
+        return this.claseService.findById(idGrupo, idClase);
     }
+
+    public ClaseResponse createClase(int idGrupo, ClaseRequest claseRequest, int idUsuario){
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        if(idGrupo != claseRequest.getIdGrupo()) {
+            throw new ClaseException("El id del grupo del path y el body no coinciden");
+        }
+
+        return this.claseService.create(claseRequest);
+    }
+
+    public ClaseResponse updateClase(int idGrupo, int idClase, ClaseRequest claseRequest, int idUsuario){
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        if(idGrupo != claseRequest.getIdGrupo()) {
+            throw new ClaseException("El id del grupo del path y el body no coinciden");
+        }
+        return this.claseService.update(idClase, claseRequest, idUsuario);
+    }
+
+    public void deleteClase(int idGrupo, int idClase, int idUsuario){
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        this.claseService.delete(idGrupo, idClase);
+    }
+
+    //CRUDs Anotacion
+    public List<AnotacionDto> findAnotacionesByGrupo(int idGrupo, int idUsuario){
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        return this.anotacionService.findByGrupo(idGrupo);
+    }
+
+    public AnotacionDto findAnotacion(int idGrupo, int idAnotacion, int idUsuario){
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        return this.anotacionService.findById(idGrupo, idAnotacion);
+    }
+
+    // todo
+    public AnotacionDto createAnotacion(int idGrupo, AnotacionDto anotacionDto, int idUsuario){}
+
+    public AnotacionDto updateAnotacion(int idGrupo, int idAnotacion, AnotacionDto anotacionDto, int idUsuario){}
+
+    public void deleteAnotacion(int idGrupo, int idAnotacion, int idUsuario){}
 
 }

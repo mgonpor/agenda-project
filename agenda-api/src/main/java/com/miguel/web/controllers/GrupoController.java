@@ -24,9 +24,7 @@ public class GrupoController {
     @Autowired
     private GrupoService grupoService;
 
-    @Autowired
-    private AnotacionService anotacionService;
-
+    //CRUDs
     @GetMapping
     public ResponseEntity<List<GrupoResponse>> findAll(@AuthenticationPrincipal User user){
         return ResponseEntity.ok(grupoService.getGrupos(user.getId()));
@@ -39,11 +37,6 @@ public class GrupoController {
         }catch (GrupoNotFoundException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<GrupoResponse>> findByNombre(@RequestParam String nombre, @AuthenticationPrincipal User user){
-        return ResponseEntity.ok(grupoService.getGruposByNombre(nombre, user.getId()));
     }
 
     @PostMapping
@@ -74,42 +67,13 @@ public class GrupoController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
-
     // OTROS
-    @PutMapping("/{id}/nombre")
-    public ResponseEntity<?> updateNombre(@PathVariable int id, @RequestParam String nombre, @AuthenticationPrincipal User user){
-        try{
-            return ResponseEntity.ok(grupoService.updateNombre(id, nombre, user.getId()));
-        }catch (GrupoNotFoundException e){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }catch (GrupoException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+    @GetMapping("/search")
+    public ResponseEntity<List<GrupoResponse>> findByNombre(@RequestParam String nombre, @AuthenticationPrincipal User user){
+        return ResponseEntity.ok(grupoService.getGruposByNombre(nombre, user.getId()));
     }
 
-    // CRUDs Anotacion
-    @GetMapping("/{idGrupo}/anotaciones")
-    public ResponseEntity<?> getAnotaciones(@PathVariable int idGrupo, @AuthenticationPrincipal User user){
-        try {
-            return ResponseEntity.ok(anotacionService.getAnotaciones(idGrupo, user.getId()));
-        } catch (GrupoNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }catch (WrongUserException e){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-    }
-
-    @GetMapping("/{idGrupo}/anotaciones/{idAnotacion}")
-    public ResponseEntity<?> getAnotacion(@PathVariable int idGrupo, @PathVariable int idAnotacion, @AuthenticationPrincipal User user){
-        try{
-            return ResponseEntity.ok(anotacionService.getAnotacionById(idGrupo, idAnotacion, user.getId()));
-        }catch (GrupoNotFoundException | AnotacionNotFoundException e){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }catch (AnotacionException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-
+    // todo: pasar a AnotacionController
     @PostMapping("/{idGrupo}/anotaciones")
     public ResponseEntity<?> createAnotacion(@PathVariable int idGrupo, @RequestBody AnotacionDto anotacionRequest, @AuthenticationPrincipal User user){
         try{
@@ -146,34 +110,4 @@ public class GrupoController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
-
-    // OTRAS
-    @GetMapping("/{idGrupo}/anotaciones/search")
-    public ResponseEntity<?> getAnotacionesByGrupoAndFecha(@PathVariable int idGrupo,
-                                                           @RequestParam("fecha")               // Hacer que funcione
-                                                           @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate fecha,
-                                                           @AuthenticationPrincipal User user){
-        try{
-            return ResponseEntity.ok(anotacionService.getAnotacionByGrupoAndFecha(idGrupo, fecha, user.getId()));
-        }catch (GrupoNotFoundException e){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }catch (AnotacionException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }catch (WrongUserException e){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-    }
-
-    @PutMapping("/{idGrupo}/anotaciones/{idAnotacion}/rewrite")
-    public ResponseEntity<?> cambiarTexto(@PathVariable int idGrupo, @PathVariable int idAnotacion,
-                                          @RequestParam String texto, @AuthenticationPrincipal User user){
-        try{
-            return ResponseEntity.ok(anotacionService.cambiarTexto(idGrupo, idAnotacion, texto, user.getId()));
-        }catch (GrupoNotFoundException | AnotacionNotFoundException e){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }catch (AnotacionException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-
 }
