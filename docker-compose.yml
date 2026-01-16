@@ -15,6 +15,11 @@ services:
     depends_on:
       - db
     restart: unless-stopped
+
+  front:
+    container_name: agenda-front
+    ports: "8081:8081"
+  
   db:
     image: mariadb
     container_name: agenda-db
@@ -32,6 +37,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: agenda-pmy
