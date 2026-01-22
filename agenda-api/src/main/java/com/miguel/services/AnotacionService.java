@@ -26,16 +26,14 @@ public class AnotacionService {
         if (!this.anotacionRepository.existsByIdAndIdGrupo(idAnotacion, idGrupo)){
             throw new AnotacionNotFoundException("Anotacion no encontrada");
         }
-        return AnotacionMapper.toDto(anotacionRepository.findByIdAndIdGrupo().get());
+        return AnotacionMapper.toDto(anotacionRepository.findByIdAndIdGrupo(idAnotacion, idGrupo).get());
     }
 
-    public AnotacionDto createAnotacion(int idGrupo, AnotacionDto anotacionRequest, int idUser){
-        if (!grupoService.perteneceAUsuario(idGrupo, idUser)) {
-            throw new WrongUserException("El usuario no tiene pertenece a este grupo");
-        }
+    public AnotacionDto createAnotacion(int idGrupo, AnotacionDto anotacionRequest){
         if(anotacionRequest.getFecha() == null){
             throw new AnotacionException("Indique una fecha válida.");
         }
+        // TODO: ver si hay que incluir idGrupo en AnotacionDto y comprobarlo
         if (anotacionRepository.findByIdGrupoAndFecha(idGrupo, anotacionRequest.getFecha()).isPresent()){
             throw new AnotacionException("Esta anotación ya existe (idGrupo y fecha).");
         }
@@ -47,20 +45,15 @@ public class AnotacionService {
         a.setId(0);
         a.setIdGrupo(idGrupo);
 
-        anotacionRepository.save(a);
-
-        return AnotacionMapper.toDto(a);
+        return AnotacionMapper.toDto(anotacionRepository.save(a));
     }
 
-    public AnotacionDto updateAnotacion(int idGrupo, int idAnotacion, AnotacionDto anotacionRequest, int idUser){
-        if (!grupoService.perteneceAUsuario(idGrupo, idUser)) {
-            throw new WrongUserException("El usuario no tiene pertenece a este grupo");
-        }
+    public AnotacionDto updateAnotacion(int idGrupo, int idAnotacion, AnotacionDto anotacionRequest){
         if (idAnotacion != anotacionRequest.getId()){
             throw new AnotacionException("Los id del path y el body no coinciden.");
         }
-        if (!anotacionRepository.existsById(idAnotacion)){
-            throw new AnotacionNotFoundException("Anotación no encontrada.");
+        if (!this.anotacionRepository.existsByIdAndIdGrupo(idAnotacion, idGrupo)){
+            throw new AnotacionNotFoundException("Anotacion no encontrada");
         }
         if(anotacionRequest.getFecha() == null){
             throw new AnotacionException("Indique una fecha válida.");
@@ -72,14 +65,10 @@ public class AnotacionService {
         Anotacion a = AnotacionMapper.toEntity(anotacionRequest);
         a.setIdGrupo(idGrupo);
 
-        anotacionRepository.save(a);
-        return AnotacionMapper.toDto(a);
+        return AnotacionMapper.toDto(anotacionRepository.save(a));
     }
 
-    public void delete(int idGrupo, int idAnotacion, int idUser){
-        if (!grupoService.perteneceAUsuario(idGrupo, idUser)) {
-            throw new WrongUserException("El usuario no tiene pertenece a este grupo");
-        }
+    public void delete(int idGrupo, int idAnotacion){
         if (!anotacionRepository.existsByIdAndIdGrupo(idAnotacion, idGrupo)){
             throw new AnotacionNotFoundException("Anotacion no encontrada.");
         }

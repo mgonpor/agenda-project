@@ -2,15 +2,16 @@ package com.miguel.services;
 
 import com.miguel.persistence.entities.Grupo;
 import com.miguel.persistence.repositories.GrupoRepository;
+import com.miguel.security.user.Role;
+import com.miguel.security.user.User;
 import com.miguel.services.dtos.*;
-import com.miguel.services.exceptions.ClaseException;
 import com.miguel.services.exceptions.GrupoException;
 import com.miguel.services.exceptions.GrupoNotFoundException;
+import com.miguel.services.exceptions.WrongUserException;
 import com.miguel.services.mappers.GrupoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.DayOfWeek;
 import java.util.List;
 import java.util.Optional;
 
@@ -108,21 +109,14 @@ public class GrupoService {
         if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
             throw new GrupoNotFoundException("Grupo no encontrado");
         }
-        if(idGrupo != claseRequest.getIdGrupo()) {
-            throw new ClaseException("El id del grupo del path y el body no coinciden");
-        }
-
-        return this.claseService.create(claseRequest);
+        return this.claseService.create(idGrupo, claseRequest);
     }
 
     public ClaseResponse updateClase(int idGrupo, int idClase, ClaseRequest claseRequest, int idUsuario){
         if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
             throw new GrupoNotFoundException("Grupo no encontrado");
         }
-        if(idGrupo != claseRequest.getIdGrupo()) {
-            throw new ClaseException("El id del grupo del path y el body no coinciden");
-        }
-        return this.claseService.update(idClase, claseRequest, idUsuario);
+        return this.claseService.update(idGrupo, idClase, claseRequest, idUsuario);
     }
 
     public void deleteClase(int idGrupo, int idClase, int idUsuario){
@@ -130,6 +124,27 @@ public class GrupoService {
             throw new GrupoNotFoundException("Grupo no encontrado");
         }
         this.claseService.delete(idGrupo, idClase);
+    }
+
+    // AUX CLASE ADMIN
+    public ClaseResponse createClaseAdmin(int idGrupo, int idUsuario, ClaseRequest claseRequest, User user){
+        if(user.getRole() != Role.ADMIN) {
+            throw new WrongUserException("Usuario no permitido");
+        }
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        return this.claseService.create(idGrupo, claseRequest);
+    }
+
+    public ClaseResponse updateClaseAdmin(int idClase, int idGrupo, int idUsuario, ClaseRequest claseRequest, User user){
+        if(user.getRole() != Role.ADMIN) {
+            throw new WrongUserException("Usuario no permitido");
+        }
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        return this.claseService.update(idGrupo, idClase, claseRequest, idUsuario);
     }
 
     //CRUDs Anotacion
@@ -147,11 +162,25 @@ public class GrupoService {
         return this.anotacionService.findById(idGrupo, idAnotacion);
     }
 
-    // todo
-    public AnotacionDto createAnotacion(int idGrupo, AnotacionDto anotacionDto, int idUsuario){}
+    public AnotacionDto createAnotacion(int idGrupo, AnotacionDto anotacionDto, int idUsuario){
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        return this.anotacionService.createAnotacion(idGrupo, anotacionDto);
+    }
 
-    public AnotacionDto updateAnotacion(int idGrupo, int idAnotacion, AnotacionDto anotacionDto, int idUsuario){}
+    public AnotacionDto updateAnotacion(int idGrupo, int idAnotacion, AnotacionDto anotacionDto, int idUsuario){
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        return this.anotacionService.updateAnotacion(idGrupo, idAnotacion, anotacionDto);
+    }
 
-    public void deleteAnotacion(int idGrupo, int idAnotacion, int idUsuario){}
+    public void deleteAnotacion(int idGrupo, int idAnotacion, int idUsuario){
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        this.anotacionService.delete(idGrupo, idAnotacion);
+    }
 
 }

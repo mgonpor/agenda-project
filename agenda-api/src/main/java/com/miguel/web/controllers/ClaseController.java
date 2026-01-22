@@ -22,7 +22,6 @@ public class ClaseController {
     private GrupoService grupoService;
 
     //CRUDs
-
     // findAll
     @GetMapping("/grupo/{idGrupo}")
     public ResponseEntity<?> getClasesByIdGrupo(@PathVariable int idGrupo, @AuthenticationPrincipal User user){
@@ -63,7 +62,7 @@ public class ClaseController {
                                          @RequestBody ClaseRequest claseRequest, @AuthenticationPrincipal User user) {
         try{
             return ResponseEntity.ok(grupoService.updateClase(idGrupo, idClase, claseRequest, user.getId()));
-        }catch (GrupoNotFoundException e){
+        }catch (GrupoNotFoundException | ClaseNotFoundException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }catch (ClaseException e){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -79,20 +78,74 @@ public class ClaseController {
             return ResponseEntity.ok("Clase " + idClase + " eliminada con éxito.");
         }catch (ClaseException e){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }catch (GrupoNotFoundException e){
+        }catch (GrupoNotFoundException | ClaseNotFoundException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
-    // ADMIN
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getClase(@PathVariable int id, @AuthenticationPrincipal User user) {
+    // Para admin
+    @Autowired
+    private ClaseService claseService;
+
+    //CRUDs ADMIN
+    @GetMapping("/admin")
+    public ResponseEntity<?> getClases(@AuthenticationPrincipal User user){
         try{
-            return ResponseEntity.ok();
+            return ResponseEntity.ok(this.claseService.findAll(user));
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/admin/{idClase}")
+    public ResponseEntity<?> getClase(@PathVariable int idClase, @AuthenticationPrincipal User user) {
+        try{
+            return ResponseEntity.ok(this.claseService.findById(idClase, user));
         }catch(ClaseNotFoundException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }catch (WrongUserException e){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
+
+    @PostMapping("/admin")
+    public ResponseEntity<?> createClaseAdmin(@RequestParam int idGrupo, @RequestParam int idUsuario,
+                                              @RequestBody ClaseRequest claseRequest, @AuthenticationPrincipal User user) {
+        try{
+            return ResponseEntity.ok(this.grupoService.createClaseAdmin(idGrupo, idUsuario, claseRequest, user));
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }catch (GrupoNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }catch (ClaseException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/admin/{idClase}")
+    public ResponseEntity<?> updateClaseAdmin(@PathVariable int idClase, @RequestParam int idGrupo, @RequestParam int idUsuario,
+                                              @RequestBody ClaseRequest claseRequest, @AuthenticationPrincipal User user){
+        try{
+            return ResponseEntity.ok(this.grupoService.updateClaseAdmin(idClase, idGrupo, idUsuario, claseRequest, user));
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }catch (GrupoNotFoundException | ClaseNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }catch (ClaseException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/admin/{idClase}")
+    public ResponseEntity<?> deleteClase(@PathVariable int idClase, @AuthenticationPrincipal User user) {
+        try{
+            this.claseService.deleteAdmin(idClase, user);
+            return ResponseEntity.ok("Clase " + idClase + " eliminada con éxito.");
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }catch (ClaseNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
 }

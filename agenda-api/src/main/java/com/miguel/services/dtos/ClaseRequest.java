@@ -10,7 +10,6 @@ import lombok.Setter;
 public class ClaseRequest {
 
     private int id;
-    private int idGrupo;
     private String diaSemana;
     private int tramo;
     private String aula;
