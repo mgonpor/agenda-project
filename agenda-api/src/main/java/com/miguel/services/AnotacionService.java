@@ -2,8 +2,13 @@ package com.miguel.services;
 
 import com.miguel.persistence.entities.Anotacion;
 import com.miguel.persistence.repositories.AnotacionRepository;
+import com.miguel.security.user.Role;
+import com.miguel.security.user.User;
 import com.miguel.services.dtos.AnotacionDto;
-import com.miguel.services.exceptions.*;
+import com.miguel.services.exceptions.AnotacionException;
+import com.miguel.services.exceptions.AnotacionNotFoundException;
+import com.miguel.services.exceptions.EmptyTextException;
+import com.miguel.services.exceptions.WrongUserException;
 import com.miguel.services.mappers.AnotacionMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,7 +38,6 @@ public class AnotacionService {
         if(anotacionRequest.getFecha() == null){
             throw new AnotacionException("Indique una fecha válida.");
         }
-        // TODO: ver si hay que incluir idGrupo en AnotacionDto y comprobarlo
         if (anotacionRepository.findByIdGrupoAndFecha(idGrupo, anotacionRequest.getFecha()).isPresent()){
             throw new AnotacionException("Esta anotación ya existe (idGrupo y fecha).");
         }
@@ -73,5 +77,37 @@ public class AnotacionService {
             throw new AnotacionNotFoundException("Anotacion no encontrada.");
         }
         anotacionRepository.deleteById(idAnotacion);
+    }
+
+    // ADMIN
+    public List<AnotacionDto> findAll(User user){
+        if(user.getRole() != Role.ADMIN) {
+            throw new WrongUserException("Usuario no permitido");
+        }
+        return this.anotacionRepository.findAll().stream()
+                .map(AnotacionMapper::toDto)
+                .toList();
+    }
+
+    public AnotacionDto findByIdAdmin(int id, User user){
+        if(user.getRole() != Role.ADMIN) {
+            throw new WrongUserException("Usuario no permitido");
+        }
+        if(!anotacionRepository.existsById(id)){
+            throw new AnotacionNotFoundException("Anotacion no encontrada.");
+        }
+        return AnotacionMapper.toDto(this.anotacionRepository.findById(id).get());
+    }
+
+    //Reutilizamos create y update tras pasar por grupoService
+
+    public void deleteAdmin(int id, User user){
+        if(user.getRole() != Role.ADMIN) {
+            throw new WrongUserException("Usuario no permitido");
+        }
+        if(!anotacionRepository.existsById(id)){
+            throw new AnotacionNotFoundException("Anotacion no encontrada.");
+        }
+        this.anotacionRepository.deleteById(id);
     }
 }

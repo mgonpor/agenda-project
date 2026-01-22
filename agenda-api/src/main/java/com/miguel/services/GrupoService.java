@@ -183,4 +183,25 @@ public class GrupoService {
         this.anotacionService.delete(idGrupo, idAnotacion);
     }
 
+    // Aux Admin Anotaciones
+    public AnotacionDto createAnotacionAdmin(int idGrupo, int idUsuario, AnotacionDto anotacionDto, User user){
+        if(user.getRole() != Role.ADMIN) {
+            throw new WrongUserException("Usuario no permitido");
+        }
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        return this.anotacionService.createAnotacion(idGrupo, anotacionDto);
+    }
+
+    public AnotacionDto updateAnotacionAdmin(int idAnotacion, int idGrupo, int idUsuario, AnotacionDto anotacionDto, User user){
+        if(user.getRole() != Role.ADMIN) {
+            throw new WrongUserException("Usuario no permitido");
+        }
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        return this.anotacionService.updateAnotacion(idGrupo, idAnotacion, anotacionDto);
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.miguel.web.controllers;
 
 import com.miguel.security.user.User;
+import com.miguel.services.AnotacionService;
 import com.miguel.services.GrupoService;
 import com.miguel.services.dtos.AnotacionDto;
 import com.miguel.services.exceptions.*;
@@ -66,6 +67,72 @@ public class AnotacionController {
             grupoService.deleteAnotacion(idGrupo, idAnotacion, user.getId());
             return ResponseEntity.ok("Anotación eliminada con éxito.");
         }catch (GrupoNotFoundException | AnotacionNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    //Para admin
+    @Autowired
+    private AnotacionService anotacionService;
+
+    // CRUDs ADMIN
+    @GetMapping("/admin")
+    public ResponseEntity<?> getAllAnotaciones(@AuthenticationPrincipal User user){
+        try{
+            return ResponseEntity.ok(this.anotacionService.findAll(user));
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/admin/{id}")
+    public ResponseEntity<?> getAnotacion(@PathVariable int id, @AuthenticationPrincipal User user){
+        try{
+            return ResponseEntity.ok(anotacionService.findByIdAdmin(id, user));
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }catch (AnotacionNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    // Aux por grupoService
+    @PostMapping("/admin")
+    public ResponseEntity<?> createAnotacionAdmin(@RequestParam int idGrupo, @RequestParam int idUsuario,
+                                                  @RequestBody AnotacionDto anotacionRequest, @AuthenticationPrincipal User user){
+        try{
+            return ResponseEntity.ok(this.grupoService.createAnotacionAdmin(idGrupo, idUsuario, anotacionRequest, user));
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }catch (GrupoNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }catch (AnotacionException | EmptyTextException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/admin/{idAnotacion}")
+    public ResponseEntity<?> updateAnotacionAdmin(@PathVariable int idAnotacion,@RequestParam int idGrupo, @RequestParam int idUsuario,
+                                                  @RequestBody AnotacionDto anotacionRequest, @AuthenticationPrincipal User user){
+        try{
+            return ResponseEntity.ok(this.grupoService.updateAnotacionAdmin(idAnotacion, idGrupo, idUsuario, anotacionRequest, user));
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }catch (GrupoNotFoundException | AnotacionNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }catch (AnotacionException | EmptyTextException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/admin/{id}")
+    public ResponseEntity<?> deleteAnotacion(@PathVariable int id, @AuthenticationPrincipal User user){
+        try{
+            this.anotacionService.deleteAdmin(id, user);
+            return ResponseEntity.ok("Anotación " + id + " eliminada con éxito.");
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }catch (AnotacionNotFoundException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }

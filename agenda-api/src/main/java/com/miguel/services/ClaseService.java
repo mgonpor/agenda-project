@@ -115,6 +115,7 @@ public class ClaseService {
     }
 
     // Reutilizamos create y update tras pasar por grupo service
+
     public void deleteAdmin(int idClase, User user) {
         if(user.getRole() != Role.ADMIN) {
             throw new WrongUserException("Usuario no permitido");
