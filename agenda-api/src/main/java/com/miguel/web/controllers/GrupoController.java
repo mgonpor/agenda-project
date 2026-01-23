@@ -69,4 +69,65 @@ public class GrupoController {
         return ResponseEntity.ok(grupoService.getGruposByNombre(nombre, user.getId()));
     }
 
+    // CRUDs ADMIN
+    @GetMapping("/admin")
+    public ResponseEntity<?> findAllAdmin(@AuthenticationPrincipal User user){
+        try{
+            return ResponseEntity.ok(this.grupoService.getGruposAdmin(user));
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/admin/{idGrupo}")
+    public ResponseEntity<?> findByIdAdmin(@PathVariable int idGrupo, @AuthenticationPrincipal User user){
+        try{
+            return ResponseEntity.ok(this.grupoService.findByIdAdmin(idGrupo, user));
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }catch (GrupoNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/admin")
+    public ResponseEntity<?> createAdmin(@RequestBody GrupoRequest grupoRequest, @RequestParam int idUsuario,
+                                         @AuthenticationPrincipal User user){
+        try{
+            return ResponseEntity.ok(this.grupoService.createAdmin(grupoRequest, idUsuario, user));
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }catch (UserNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }catch (GrupoException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/admin/{idGrupo}")
+    public ResponseEntity<?> updateAdmin(@PathVariable int idGrupo, @RequestBody GrupoRequest grupoRequest,
+                                         @RequestParam int idUsuario, @AuthenticationPrincipal User user){
+        try{
+            return ResponseEntity.ok(this.grupoService.updateAdmin(idGrupo, grupoRequest, idUsuario, user));
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }catch (UserNotFoundException | GrupoNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }catch (GrupoException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/admin/{idGrupo}")
+    public ResponseEntity<?> deleteAdmin(@PathVariable int idGrupo, @RequestParam int idUsuario,
+                                         @AuthenticationPrincipal User user){
+        try{
+            return ResponseEntity.ok("Grupo " + grupoService.deleteAdmin(idGrupo, idUsuario, user)
+                    + " eliminado con éxito.");
+        }catch (WrongUserException e){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }catch (UserNotFoundException | GrupoNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
 }

@@ -4,9 +4,11 @@ import com.miguel.persistence.entities.Grupo;
 import com.miguel.persistence.repositories.GrupoRepository;
 import com.miguel.security.user.Role;
 import com.miguel.security.user.User;
+import com.miguel.security.user.UserRepository;
 import com.miguel.services.dtos.*;
 import com.miguel.services.exceptions.GrupoException;
 import com.miguel.services.exceptions.GrupoNotFoundException;
+import com.miguel.services.exceptions.UserNotFoundException;
 import com.miguel.services.exceptions.WrongUserException;
 import com.miguel.services.mappers.GrupoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,9 @@ public class GrupoService {
 
     @Autowired
     private GrupoRepository grupoRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private ClaseService claseService;
@@ -86,6 +91,56 @@ public class GrupoService {
         return grupoRepository.findByIdUsuarioAndNombreContainingIgnoreCase(idUsuario, nombre).stream()
                 .map(GrupoMapper::toDto)
                 .toList();
+    }
+
+    // CRUDs ADMIN Grupo
+    public List<GrupoResponse> getGruposAdmin(User user){
+        if(user.getRole() != Role.ADMIN) {
+            throw new WrongUserException("Usuario no permitido");
+        }
+        return grupoRepository.findAll().stream()
+                .map(GrupoMapper::toDto)
+                .toList();
+    }
+
+    public GrupoResponse findByIdAdmin(int idGrupo, User user){
+        if(user.getRole() != Role.ADMIN) {
+            throw new WrongUserException("Usuario no permitido");
+        }
+        if(!grupoRepository.existsById(idGrupo)){
+            throw new GrupoNotFoundException("Grupo no encontrado");
+        }
+        return GrupoMapper.toDto(grupoRepository.findById(idGrupo).get());
+    }
+
+    public GrupoResponse createAdmin(GrupoRequest grupoRequest, int idUsuario, User user){
+        if(user.getRole() != Role.ADMIN) {
+            throw new WrongUserException("Usuario no permitido");
+        }
+        if (!userRepository.existsById(idUsuario)){
+            throw new UserNotFoundException("Usuario no encontrado");
+        }
+        return this.createGrupo(grupoRequest, idUsuario);
+    }
+
+    public GrupoResponse updateAdmin(int idGrupo, GrupoRequest grupoRequest, int idUsuario, User user){
+        if(user.getRole() != Role.ADMIN) {
+            throw new WrongUserException("Usuario no permitido");
+        }
+        if (!userRepository.existsById(idUsuario)){
+            throw new UserNotFoundException("Usuario no encontrado");
+        }
+        return this.updateGrupo(idGrupo, grupoRequest, idUsuario);
+    }
+
+    public String deleteAdmin(int idGrupo, int idUsuario, User user){
+        if(user.getRole() != Role.ADMIN) {
+            throw new WrongUserException("Usuario no permitido");
+        }
+        if (!userRepository.existsById(idUsuario)){
+            throw new UserNotFoundException("Usuario no encontrado");
+        }
+        return this.deleteGrupo(idGrupo, idUsuario);
     }
 
     // CRUDS Clase
