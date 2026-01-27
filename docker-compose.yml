@@ -16,12 +16,12 @@ services:
       - db
     restart: unless-stopped
 
-  front:
-    container_name: agenda-front
-    ports: "8081:8081"
+#  front:
+#    container_name: agenda-front
+#    ports: "8081:8081"
   
   db:
-    image: mariadb
+    image: mariadb:10.3
     container_name: agenda-db
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS}
