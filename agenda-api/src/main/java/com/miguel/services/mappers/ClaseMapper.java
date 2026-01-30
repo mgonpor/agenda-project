@@ -29,7 +29,6 @@ public class ClaseMapper {
         Clase entity = new Clase();
 
         entity.setId(dto.getId());
-        entity.setIdGrupo(dto.getIdGrupo());
 
         entity.setDiaSemana(DayOfWeek.valueOf(dto.getDiaSemana()));
 

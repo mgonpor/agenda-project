@@ -2,8 +2,8 @@ package com.miguel.services;
 
 import com.miguel.persistence.entities.Anotacion;
 import com.miguel.persistence.repositories.AnotacionRepository;
-import com.miguel.security.user.Role;
-import com.miguel.security.user.User;
+import com.miguel.persistence.entities.user.Role;
+import com.miguel.persistence.entities.user.User;
 import com.miguel.services.dtos.AnotacionDto;
 import com.miguel.services.exceptions.AnotacionException;
 import com.miguel.services.exceptions.AnotacionNotFoundException;

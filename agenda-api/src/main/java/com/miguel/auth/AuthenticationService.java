@@ -1,7 +1,7 @@
 package com.miguel.auth;
 
-import com.miguel.security.config.JwtService;
-import com.miguel.security.user.UserRepository;
+import com.miguel.web.config.JwtService;
+import com.miguel.persistence.entities.user.UserRepository;
 import com.miguel.services.exceptions.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;

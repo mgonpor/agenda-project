@@ -1,0 +1,35 @@
+services:
+  db:
+    image: mariadb:10.3
+    container_name: agenda-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS}
+      MYSQL_DATABASE: agenda
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql/data
+    healthcheck:
+      test: [ "CMD", "mariadb-admin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: agenda-pmy
+    links:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "8088:80"
+    depends_on:
+      - db
+volumes:
+  dbdata:

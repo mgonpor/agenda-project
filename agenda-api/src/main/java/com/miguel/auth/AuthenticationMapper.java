@@ -1,7 +1,7 @@
 package com.miguel.auth;
 
-import com.miguel.security.user.Role;
-import com.miguel.security.user.User;
+import com.miguel.persistence.entities.user.Role;
+import com.miguel.persistence.entities.user.User;
 
 public class AuthenticationMapper {
 

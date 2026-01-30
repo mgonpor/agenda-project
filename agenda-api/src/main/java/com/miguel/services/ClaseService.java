@@ -2,8 +2,8 @@ package com.miguel.services;
 
 import com.miguel.persistence.entities.Clase;
 import com.miguel.persistence.repositories.ClaseRepository;
-import com.miguel.security.user.Role;
-import com.miguel.security.user.User;
+import com.miguel.persistence.entities.user.Role;
+import com.miguel.persistence.entities.user.User;
 import com.miguel.services.dtos.ClaseRequest;
 import com.miguel.services.dtos.ClaseResponse;
 import com.miguel.services.exceptions.ClaseException;

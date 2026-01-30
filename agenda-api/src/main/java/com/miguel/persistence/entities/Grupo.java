@@ -1,7 +1,7 @@
 package com.miguel.persistence.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.miguel.security.user.User;
+import com.miguel.persistence.entities.user.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

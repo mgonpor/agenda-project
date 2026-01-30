@@ -2,9 +2,9 @@ package com.miguel.services;
 
 import com.miguel.persistence.entities.Grupo;
 import com.miguel.persistence.repositories.GrupoRepository;
-import com.miguel.security.user.Role;
-import com.miguel.security.user.User;
-import com.miguel.security.user.UserRepository;
+import com.miguel.persistence.entities.user.Role;
+import com.miguel.persistence.entities.user.User;
+import com.miguel.persistence.entities.user.UserRepository;
 import com.miguel.services.dtos.*;
 import com.miguel.services.exceptions.GrupoException;
 import com.miguel.services.exceptions.GrupoNotFoundException;
