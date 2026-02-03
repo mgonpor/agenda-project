@@ -2,9 +2,8 @@ package com.miguel.services;
 
 import com.miguel.persistence.entities.Grupo;
 import com.miguel.persistence.repositories.GrupoRepository;
-import com.miguel.persistence.entities.user.Role;
-import com.miguel.persistence.entities.user.User;
-import com.miguel.persistence.entities.user.UserRepository;
+import com.miguel.persistence.entities.Usuario;
+import com.miguel.persistence.repositories.UsuarioRepository;
 import com.miguel.services.dtos.*;
 import com.miguel.services.exceptions.GrupoException;
 import com.miguel.services.exceptions.GrupoNotFoundException;
@@ -12,6 +11,7 @@ import com.miguel.services.exceptions.UserNotFoundException;
 import com.miguel.services.exceptions.WrongUserException;
 import com.miguel.services.mappers.GrupoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,241 +22,199 @@ public class GrupoService {
 
     @Autowired
     private GrupoRepository grupoRepository;
-
     @Autowired
-    private UserRepository userRepository;
-
+    private UsuarioRepository usuarioRepository;
     @Autowired
     private ClaseService claseService;
-
     @Autowired
     private AnotacionService anotacionService;
 
-    public List<GrupoResponse> getGrupos(int idUsuario){
-        return grupoRepository.findByIdUsuario(idUsuario).stream()
-                .map(GrupoMapper::toDto)
-                .toList();
+    // --- MÉTODOS AUXILIARES DE CONTEXTO ---
+
+    private Usuario getUsuarioAutenticado() {
+        return usuarioRepository.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName())
+                .orElseThrow(() -> new UserNotFoundException("Usuario en sesión no encontrado"));
     }
 
-    public GrupoResponse getGrupo(int idGrupo, int idUsuario){
-        Optional<Grupo> grupo = grupoRepository.findByIdAndIdUsuario(idGrupo, idUsuario);
-        if(grupo.isEmpty()){
-            throw new GrupoNotFoundException("Grupo no encontrado");
+    private boolean isAdmin() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
+    /**
+     * Verifica si el grupo pertenece al usuario o si es ADMIN.
+     */
+    private void validarAccesoGrupo(int idGrupo) {
+        if (isAdmin()) return; // Si es admin, tiene acceso total
+
+        Usuario usuario = getUsuarioAutenticado();
+        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, usuario.getId())) {
+            throw new GrupoNotFoundException("El grupo no existe o no tienes permiso");
         }
-        return GrupoMapper.toDto(grupo.get());
     }
 
-    public GrupoResponse createGrupo(GrupoRequest grupoRequest, int idUsuario){
-        if(grupoRepository.existsByIdUsuarioAndNombreIgnoreCase(idUsuario, grupoRequest.getNombre())){
-            throw new GrupoException("Grupo ya existente");
-        }
+    // ==========================================
+    // SECCIÓN USER (Solo recursos propios)
+    // ==========================================
 
-        grupoRequest.setId(0);
-        Grupo g = GrupoMapper.toEntity(grupoRequest);
-        g.setIdUsuario(idUsuario);
-
-        return GrupoMapper.toDto(grupoRepository.save(g));
+    public List<GrupoResponse> getGruposUser() {
+        return grupoRepository.findByIdUsuario(getUsuarioAutenticado().getId()).stream()
+                .map(GrupoMapper::toDto).toList();
     }
 
-    public GrupoResponse updateGrupo(int id, GrupoRequest grupoRequest, int idUsuario){
-        if(id != grupoRequest.getId()){
-            throw new GrupoException("El id del path y el body no coinciden");
-        }
-        if(grupoRepository.findByIdAndIdUsuario(id, idUsuario).isEmpty()){
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
-        if(grupoRepository.existsByIdUsuarioAndNombreIgnoreCase(idUsuario, grupoRequest.getNombre())){
-            throw new GrupoException("Grupo ya existente");
-        }
-
-        Grupo g = GrupoMapper.toEntity(grupoRequest);
-        g.setIdUsuario(idUsuario);
-
-        return GrupoMapper.toDto(grupoRepository.save(g));
-    }
-
-    public String deleteGrupo(int id, int idUsuario){
-        Optional<Grupo> grupo = grupoRepository.findByIdAndIdUsuario(id, idUsuario);
-        if(grupo.isEmpty()){
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
-
-        String nombre = grupo.get().getNombre();
-        grupoRepository.deleteById(id);
-
-        return nombre;
-    }
-    // OTROS
-    public List<GrupoResponse> getGruposByNombre(String nombre, int idUsuario){
-        return grupoRepository.findByIdUsuarioAndNombreContainingIgnoreCase(idUsuario, nombre).stream()
-                .map(GrupoMapper::toDto)
-                .toList();
-    }
-
-    // CRUDs ADMIN Grupo
-    public List<GrupoResponse> getGruposAdmin(User user){
-        if(user.getRole() != Role.ADMIN) {
-            throw new WrongUserException("Usuario no permitido");
-        }
-        return grupoRepository.findAll().stream()
-                .map(GrupoMapper::toDto)
-                .toList();
-    }
-
-    public GrupoResponse findByIdAdmin(int idGrupo, User user){
-        if(user.getRole() != Role.ADMIN) {
-            throw new WrongUserException("Usuario no permitido");
-        }
-        if(!grupoRepository.existsById(idGrupo)){
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
+    public GrupoResponse getGrupoUser(int idGrupo) {
+        validarAccesoGrupo(idGrupo);
         return GrupoMapper.toDto(grupoRepository.findById(idGrupo).get());
     }
 
-    public GrupoResponse createAdmin(GrupoRequest grupoRequest, int idUsuario, User user){
-        if(user.getRole() != Role.ADMIN) {
-            throw new WrongUserException("Usuario no permitido");
+    public GrupoResponse createGrupoUser(GrupoRequest grupoRequest) {
+        Usuario usuario = getUsuarioAutenticado();
+        if (grupoRepository.existsByIdUsuarioAndNombreIgnoreCase(usuario.getId(), grupoRequest.getNombre())) {
+            throw new GrupoException("Ya tienes un grupo con ese nombre");
         }
-        if (!userRepository.existsById(idUsuario)){
-            throw new UserNotFoundException("Usuario no encontrado");
-        }
-        return this.createGrupo(grupoRequest, idUsuario);
+        Grupo g = GrupoMapper.toEntity(grupoRequest);
+        g.setId(0);
+        g.setIdUsuario(usuario.getId());
+        return GrupoMapper.toDto(grupoRepository.save(g));
     }
 
-    public GrupoResponse updateAdmin(int idGrupo, GrupoRequest grupoRequest, int idUsuario, User user){
-        if(user.getRole() != Role.ADMIN) {
-            throw new WrongUserException("Usuario no permitido");
-        }
-        if (!userRepository.existsById(idUsuario)){
-            throw new UserNotFoundException("Usuario no encontrado");
-        }
-        return this.updateGrupo(idGrupo, grupoRequest, idUsuario);
+    public GrupoResponse updateGrupoUser(int id, GrupoRequest grupoRequest) {
+        validarAccesoGrupo(id);
+        // Lógica de actualización igual a la anterior pero garantizando que es del usuario
+        Grupo grupoBD = grupoRepository.findById(id).get();
+        grupoBD.setNombre(grupoRequest.getNombre());
+        return GrupoMapper.toDto(grupoRepository.save(grupoBD));
     }
 
-    public String deleteAdmin(int idGrupo, int idUsuario, User user){
-        if(user.getRole() != Role.ADMIN) {
-            throw new WrongUserException("Usuario no permitido");
-        }
-        if (!userRepository.existsById(idUsuario)){
-            throw new UserNotFoundException("Usuario no encontrado");
-        }
-        return this.deleteGrupo(idGrupo, idUsuario);
+    public String deleteGrupoUser(int id) {
+        validarAccesoGrupo(id);
+        String nombre = grupoRepository.findById(id).get().getNombre();
+        grupoRepository.deleteById(id);
+        return nombre;
     }
 
-    // CRUDS Clase
-    public List<ClaseResponse> findClasesByGrupo(int idGrupo, int idUsuario){
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
-
+    // --- CLASES ---
+    public List<ClaseResponse> findClasesByGrupoUser(int idGrupo) {
+        validarAccesoGrupo(idGrupo); // Seguridad primero
         return this.claseService.findByGrupo(idGrupo);
     }
 
-    public ClaseResponse findClase(int idGrupo, int idClase, int idUsuario){
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
-
+    public ClaseResponse findClaseByIdUser(int idGrupo, int idClase) {
+        validarAccesoGrupo(idGrupo);
         return this.claseService.findById(idGrupo, idClase);
     }
 
-    public ClaseResponse createClase(int idGrupo, ClaseRequest claseRequest, int idUsuario){
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
-        return this.claseService.create(idGrupo, claseRequest);
+    public ClaseResponse createClaseUser(int idGrupo, ClaseRequest request) {
+        validarAccesoGrupo(idGrupo);
+        return this.claseService.create(idGrupo, request);
     }
 
-    public ClaseResponse updateClase(int idGrupo, int idClase, ClaseRequest claseRequest, int idUsuario){
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
-        return this.claseService.update(idGrupo, idClase, claseRequest, idUsuario);
+    public ClaseResponse updateClaseUser(int idGrupo, int idClase, ClaseRequest request) {
+        validarAccesoGrupo(idGrupo);
+        return this.claseService.update(idGrupo, idClase, request);
     }
 
-    public void deleteClase(int idGrupo, int idClase, int idUsuario){
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
+    public void deleteClaseUser(int idGrupo, int idClase) {
+        validarAccesoGrupo(idGrupo);
         this.claseService.delete(idGrupo, idClase);
     }
 
-    // AUX CLASE ADMIN
-    public ClaseResponse createClaseAdmin(int idGrupo, int idUsuario, ClaseRequest claseRequest, User user){
-        if(user.getRole() != Role.ADMIN) {
-            throw new WrongUserException("Usuario no permitido");
-        }
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
-        return this.claseService.create(idGrupo, claseRequest);
-    }
-
-    public ClaseResponse updateClaseAdmin(int idClase, int idGrupo, int idUsuario, ClaseRequest claseRequest, User user){
-        if(user.getRole() != Role.ADMIN) {
-            throw new WrongUserException("Usuario no permitido");
-        }
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
-        return this.claseService.update(idGrupo, idClase, claseRequest, idUsuario);
-    }
-
-    //CRUDs Anotacion
-    public List<AnotacionDto> findAnotacionesByGrupo(int idGrupo, int idUsuario){
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
+    // --- ANOTACIONES ---
+    public List<AnotacionDto> findAnotacionesByGrupoUser(int idGrupo) {
+        validarAccesoGrupo(idGrupo);
         return this.anotacionService.findByGrupo(idGrupo);
     }
 
-    public AnotacionDto findAnotacion(int idGrupo, int idAnotacion, int idUsuario){
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
+    public AnotacionDto findAnotacionByIdUser(int idGrupo, int idAnotacion) {
+        validarAccesoGrupo(idGrupo);
         return this.anotacionService.findById(idGrupo, idAnotacion);
     }
 
-    public AnotacionDto createAnotacion(int idGrupo, AnotacionDto anotacionDto, int idUsuario){
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
-        return this.anotacionService.createAnotacion(idGrupo, anotacionDto);
+    public AnotacionDto createAnotacionUser(int idGrupo, AnotacionDto request) {
+        validarAccesoGrupo(idGrupo);
+        return this.anotacionService.createAnotacion(idGrupo, request);
     }
 
-    public AnotacionDto updateAnotacion(int idGrupo, int idAnotacion, AnotacionDto anotacionDto, int idUsuario){
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
-        return this.anotacionService.updateAnotacion(idGrupo, idAnotacion, anotacionDto);
+    public AnotacionDto updateAnotacionUser(int idGrupo, int idAnotacion, AnotacionDto request) {
+        validarAccesoGrupo(idGrupo);
+        return this.anotacionService.updateAnotacion(idGrupo, idAnotacion, request);
     }
 
-    public void deleteAnotacion(int idGrupo, int idAnotacion, int idUsuario){
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
+    public void deleteAnotacionUser(int idGrupo, int idAnotacion) {
+        validarAccesoGrupo(idGrupo);
         this.anotacionService.delete(idGrupo, idAnotacion);
     }
 
-    // Aux Admin Anotaciones
-    public AnotacionDto createAnotacionAdmin(int idGrupo, int idUsuario, AnotacionDto anotacionDto, User user){
-        if(user.getRole() != Role.ADMIN) {
-            throw new WrongUserException("Usuario no permitido");
-        }
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
-        }
-        return this.anotacionService.createAnotacion(idGrupo, anotacionDto);
+    // ==========================================
+    // SECCIÓN ADMIN (Acceso Total)
+    // ==========================================
+
+    public List<GrupoResponse> getAllGruposAdmin() {
+        return grupoRepository.findAll().stream().map(GrupoMapper::toDto).toList();
     }
 
-    public AnotacionDto updateAnotacionAdmin(int idAnotacion, int idGrupo, int idUsuario, AnotacionDto anotacionDto, User user){
-        if(user.getRole() != Role.ADMIN) {
-            throw new WrongUserException("Usuario no permitido");
+    public GrupoResponse getGrupoAdmin(int idGrupo) {
+        return grupoRepository.findById(idGrupo)
+                .map(GrupoMapper::toDto)
+                .orElseThrow(() -> new GrupoNotFoundException("Grupo no existe"));
+    }
+
+    public GrupoResponse createGrupoAdmin(GrupoRequest grupoRequest, int idUsuarioDestino) {
+        if (!usuarioRepository.existsById(idUsuarioDestino)) {
+            throw new UserNotFoundException("Usuario destino no encontrado");
         }
-        if (!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)) {
-            throw new GrupoNotFoundException("Grupo no encontrado");
+        // Lógica idéntica: Misma validación de nombre duplicado
+        if (grupoRepository.existsByIdUsuarioAndNombreIgnoreCase(idUsuarioDestino, grupoRequest.getNombre())) {
+            throw new GrupoException("El usuario ya tiene un grupo con ese nombre");
         }
-        return this.anotacionService.updateAnotacion(idGrupo, idAnotacion, anotacionDto);
+
+        Grupo g = GrupoMapper.toEntity(grupoRequest);
+        g.setId(0);
+        g.setIdUsuario(idUsuarioDestino);
+        return GrupoMapper.toDto(grupoRepository.save(g));
+    }
+
+    public GrupoResponse updateGrupoAdmin(int idGrupo, GrupoRequest grupoRequest, int idUsuarioDestino) {
+        // Paridad: Validación de coherencia de IDs como en el métod original
+        if (idGrupo != grupoRequest.getId()) {
+            throw new GrupoException("ID de ruta y body no coinciden");
+        }
+
+        Grupo grupoBD = grupoRepository.findById(idGrupo)
+                .orElseThrow(() -> new GrupoNotFoundException("Grupo no encontrado"));
+
+        // Paridad: Validación de nombre duplicado para ese usuario específico
+        if (!grupoBD.getNombre().equalsIgnoreCase(grupoRequest.getNombre()) &&
+                grupoRepository.existsByIdUsuarioAndNombreIgnoreCase(idUsuarioDestino, grupoRequest.getNombre())) {
+            throw new GrupoException("Ya existe otro grupo con ese nombre para este usuario");
+        }
+
+        grupoBD.setNombre(grupoRequest.getNombre());
+        grupoBD.setIdUsuario(idUsuarioDestino); // El admin puede reasignar el grupo
+
+        return GrupoMapper.toDto(grupoRepository.save(grupoBD));
+    }
+
+    public String deleteGrupoAdmin(int idGrupo) {
+        if (!grupoRepository.existsById(idGrupo)) throw new GrupoNotFoundException("No existe");
+        String nombre = grupoRepository.findById(idGrupo).get().getNombre();
+        grupoRepository.deleteById(idGrupo);
+        return nombre;
+    }
+
+    public List<GrupoResponse> findGruposByNombreAdmin(String nombre) {
+        // Búsqueda global para el admin
+        return grupoRepository.findByNombreContainingIgnoreCase(nombre).stream()
+                .map(GrupoMapper::toDto).toList();
+    }
+
+    // --- Sub-recursos para ADMIN (Acceso a cualquier grupo) ---
+
+    public List<ClaseResponse> findClasesByGrupoAdmin(int idGrupo) {
+        return this.claseService.findByGrupo(idGrupo); // Sin validar propiedad
+    }
+
+    public List<AnotacionDto> findAnotacionesByGrupoAdmin(int idGrupo) {
+        return this.anotacionService.findByGrupo(idGrupo); // Sin validar propiedad
     }
 
 }

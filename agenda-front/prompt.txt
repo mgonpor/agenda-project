@@ -1,0 +1,1 @@
+A partir de esto, vamos a corregir la estructura de nuestro front. Analiza agenda-api, solo ver, PROHIBIDO TOCAR, solo avisa si hay algo muy mal, y vamos a rediseñar el front responsive para que el consumo de api sea correcto,asi como el manejo de seguridad con interceptores y guards. Tambien las excepciones del GlobalExceptionHandler y el manejo de errores SIN alert(). 

@@ -1,4 +1,4 @@
-package com.miguel.auth;
+package com.miguel.services.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,10 +7,10 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
-public class AuthenticationRequest {
+@AllArgsConstructor
+public class LoginRequest {
 
-    private String email;
+    private String username;
     private String password;
 }

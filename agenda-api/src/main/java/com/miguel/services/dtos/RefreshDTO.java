@@ -1,4 +1,4 @@
-package com.miguel.auth;
+package com.miguel.services.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,9 +7,10 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
-public class AuthenticationResponse {
+@AllArgsConstructor
+public class RefreshDTO {
 
-    private String token;
+    private String refresh;
+
 }

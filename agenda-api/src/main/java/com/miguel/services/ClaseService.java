@@ -2,8 +2,7 @@ package com.miguel.services;
 
 import com.miguel.persistence.entities.Clase;
 import com.miguel.persistence.repositories.ClaseRepository;
-import com.miguel.persistence.entities.user.Role;
-import com.miguel.persistence.entities.user.User;
+import com.miguel.persistence.entities.Usuario;
 import com.miguel.services.dtos.ClaseRequest;
 import com.miguel.services.dtos.ClaseResponse;
 import com.miguel.services.exceptions.ClaseException;
@@ -11,6 +10,7 @@ import com.miguel.services.exceptions.ClaseNotFoundException;
 import com.miguel.services.exceptions.WrongUserException;
 import com.miguel.services.mappers.ClaseMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -19,21 +19,29 @@ import java.util.Optional;
 
 @Service
 public class ClaseService {
-
     @Autowired
     private ClaseRepository claseRepository;
 
-    public List<ClaseResponse> findByGrupo(int idGrupo){
+    // --- MÉTODOS AUXILIARES ---
+
+    private boolean isAdmin() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    // --- MÉTODOS DE NEGOCIO (Llamados desde GrupoService) ---
+
+    public List<ClaseResponse> findByGrupo(int idGrupo) {
+        // La seguridad la garantiza GrupoService.validarAccesoGrupo
         return claseRepository.findByIdGrupo(idGrupo).stream()
                 .map(ClaseMapper::toDto)
                 .toList();
     }
 
-    public ClaseResponse findById(int idGrupo, int idClase){
-        if (!this.claseRepository.existsByIdAndIdGrupo(idClase, idGrupo)){
-            throw new ClaseNotFoundException("Clase no encontrada");
-        }
-        return ClaseMapper.toDto(claseRepository.findByIdAndIdGrupo(idClase, idGrupo).get());
+    public ClaseResponse findById(int idGrupo, int idClase) {
+        return claseRepository.findByIdAndIdGrupo(idClase, idGrupo)
+                .map(ClaseMapper::toDto)
+                .orElseThrow(() -> new ClaseNotFoundException("Clase no encontrada en este grupo"));
     }
 
     public ClaseResponse create(int idGrupo, ClaseRequest claseRequest) {
@@ -95,8 +103,8 @@ public class ClaseService {
 
     // CRUDs
     // ADMIN
-    public List<ClaseResponse> findAll(User user) {
-        if(user.getRole() != Role.ADMIN) {
+    public List<ClaseResponse> findAll(Usuario usuario) {
+        if(usuario.getRole() != Role.ADMIN) {
             throw new WrongUserException("Usuario no permitido");
         }
         return claseRepository.findAll().stream()
@@ -104,8 +112,8 @@ public class ClaseService {
                 .toList();
     }
 
-    public ClaseResponse findById(int id, User user) {
-        if(user.getRole() != Role.ADMIN) {
+    public ClaseResponse findById(int id, Usuario usuario) {
+        if(usuario.getRole() != Role.ADMIN) {
             throw new WrongUserException("Usuario no permitido");
         }
         if(!claseRepository.existsById(id)){
@@ -116,8 +124,8 @@ public class ClaseService {
 
     // Reutilizamos create y update tras pasar por grupo service
 
-    public void deleteAdmin(int idClase, User user) {
-        if(user.getRole() != Role.ADMIN) {
+    public void deleteAdmin(int idClase, Usuario usuario) {
+        if(usuario.getRole() != Role.ADMIN) {
             throw new WrongUserException("Usuario no permitido");
         }
         if(!claseRepository.existsById(idClase)){

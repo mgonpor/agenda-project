@@ -1,0 +1,47 @@
+import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { tap } from 'rxjs/operators';
+import { Router } from '@angular/router';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private readonly AUTH_TOKEN = 'auth_token';
+  currentUser = signal<any>(null);
+  isAuthenticated = signal<boolean>(false);
+
+  constructor(private http: HttpClient, private router: Router) {
+    this.checkToken();
+  }
+
+  private checkToken() {
+    const token = localStorage.getItem(this.AUTH_TOKEN);
+    if (token) {
+      this.isAuthenticated.set(true);
+      // Opcional: decodificar JWT o verificar validez con el backend
+    }
+  }
+
+  login(credentials: any) {
+    return this.http.post<any>('/api/auth/login', credentials).pipe(
+      tap(response => {
+        localStorage.setItem(this.AUTH_TOKEN, response.token);
+        this.currentUser.set(response.user);
+        this.isAuthenticated.set(true);
+        this.router.navigate(['/dashboard']);
+      })
+    );
+  }
+
+  logout() {
+    localStorage.removeItem(this.AUTH_TOKEN);
+    this.currentUser.set(null);
+    this.isAuthenticated.set(false);
+    this.router.navigate(['/login']);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem(this.AUTH_TOKEN);
+  }
+}

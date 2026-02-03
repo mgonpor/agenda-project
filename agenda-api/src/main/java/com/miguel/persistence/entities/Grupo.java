@@ -1,7 +1,6 @@
 package com.miguel.persistence.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.miguel.persistence.entities.user.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,7 +25,7 @@ public class Grupo {
     @ManyToOne
     @JoinColumn(name = "id_usuario", referencedColumnName = "id", insertable = false, updatable = false)
     @JsonIgnore
-    private User usuario;
+    private Usuario usuario;
 
     @Column(columnDefinition = "VARCHAR(20)",  nullable = false, unique = true)
     private String nombre;

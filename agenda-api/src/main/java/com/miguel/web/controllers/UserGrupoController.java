@@ -1,6 +1,6 @@
 package com.miguel.web.controllers;
 
-import com.miguel.persistence.entities.user.User;
+import com.miguel.persistence.entities.Usuario;
 import com.miguel.services.GrupoService;
 import com.miguel.services.dtos.GrupoRequest;
 import com.miguel.services.dtos.GrupoResponse;
@@ -21,33 +21,28 @@ public class UserGrupoController {
 
     //CRUDs
     @GetMapping
-    public ResponseEntity<List<GrupoResponse>> findAll(@AuthenticationPrincipal User user){
-        return ResponseEntity.ok(grupoService.getGrupos(user.getId()));
+    public ResponseEntity<List<GrupoResponse>> findAll(){
+        return ResponseEntity.ok(grupoService.getGruposUser());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> findById(@PathVariable int id, @AuthenticationPrincipal User user){
-        return ResponseEntity.ok(grupoService.getGrupo(id, user.getId()));
+    public ResponseEntity<?> findById(@PathVariable int id){
+        return ResponseEntity.ok(grupoService.getGrupoUser(id));
     }
 
     @PostMapping
-    public ResponseEntity<?> save(@RequestBody GrupoRequest grupoRequest, @AuthenticationPrincipal User user){
-        return ResponseEntity.status(HttpStatus.CREATED).body(grupoService.createGrupo(grupoRequest, user.getId()));
+    public ResponseEntity<?> save(@RequestBody GrupoRequest grupoRequest){
+        return ResponseEntity.status(HttpStatus.CREATED).body(grupoService.createGrupoUser(grupoRequest));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable int id, @RequestBody GrupoRequest grupoRequest, @AuthenticationPrincipal User user){
-        return ResponseEntity.ok(grupoService.updateGrupo(id, grupoRequest, user.getId()));
+    public ResponseEntity<?> update(@PathVariable int id, @RequestBody GrupoRequest grupoRequest){
+        return ResponseEntity.ok(grupoService.updateGrupoUser(id, grupoRequest));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable int id, @AuthenticationPrincipal User user){
-        return ResponseEntity.ok("Grupo " + grupoService.deleteGrupo(id, user.getId()) + " eliminado con éxito.");
-    }
-    // OTROS
-    @GetMapping("/search")
-    public ResponseEntity<List<GrupoResponse>> findByNombre(@RequestParam String nombre, @AuthenticationPrincipal User user){
-        return ResponseEntity.ok(grupoService.getGruposByNombre(nombre, user.getId()));
+    public ResponseEntity<?> delete(@PathVariable int id){
+        return ResponseEntity.ok("Grupo " + grupoService.deleteGrupoUser(id) + " eliminado con éxito.");
     }
 
 }

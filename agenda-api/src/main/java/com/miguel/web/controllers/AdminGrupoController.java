@@ -1,6 +1,6 @@
 package com.miguel.web.controllers;
 
-import com.miguel.persistence.entities.user.User;
+import com.miguel.persistence.entities.Usuario;
 import com.miguel.services.GrupoService;
 import com.miguel.services.dtos.GrupoRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,31 +17,29 @@ public class AdminGrupoController {
 
     // CRUDs ADMIN
     @GetMapping
-    public ResponseEntity<?> findAllAdmin(@AuthenticationPrincipal User user){
-        return ResponseEntity.ok(this.grupoService.getGruposAdmin(user));
+    public ResponseEntity<?> findAllAdmin(){
+        return ResponseEntity.ok(this.grupoService.getAllGruposAdmin());
     }
 
     @GetMapping("/{idGrupo}")
-    public ResponseEntity<?> findByIdAdmin(@PathVariable int idGrupo, @AuthenticationPrincipal User user){
-        return ResponseEntity.ok(this.grupoService.findByIdAdmin(idGrupo, user));
+    public ResponseEntity<?> findByIdAdmin(@PathVariable int idGrupo){
+        return ResponseEntity.ok(this.grupoService.getGrupoAdmin(idGrupo));
     }
 
     @PostMapping
-    public ResponseEntity<?> createAdmin(@RequestBody GrupoRequest grupoRequest, @RequestParam int idUsuario,
-                                         @AuthenticationPrincipal User user){
-        return ResponseEntity.ok(this.grupoService.createAdmin(grupoRequest, idUsuario, user));
+    public ResponseEntity<?> createAdmin(@RequestBody GrupoRequest grupoRequest, @RequestParam int idUsuario){
+        return ResponseEntity.ok(this.grupoService.createGrupoAdmin(grupoRequest, idUsuario));
     }
 
     @PutMapping("/{idGrupo}")
     public ResponseEntity<?> updateAdmin(@PathVariable int idGrupo, @RequestBody GrupoRequest grupoRequest,
-                                         @RequestParam int idUsuario, @AuthenticationPrincipal User user){
-        return ResponseEntity.ok(this.grupoService.updateAdmin(idGrupo, grupoRequest, idUsuario, user));
+                                         @RequestParam int idUsuario){
+        return ResponseEntity.ok(this.grupoService.updateGrupoAdmin(idGrupo, grupoRequest, idUsuario));
     }
 
     @DeleteMapping("/{idGrupo}")
-    public ResponseEntity<?> deleteAdmin(@PathVariable int idGrupo, @RequestParam int idUsuario,
-                                         @AuthenticationPrincipal User user){
-        return ResponseEntity.ok("Grupo " + grupoService.deleteAdmin(idGrupo, idUsuario, user)
+    public ResponseEntity<?> deleteAdmin(@PathVariable int idGrupo){
+        return ResponseEntity.ok("Grupo " + grupoService.deleteGrupoAdmin(idGrupo)
                 + " eliminado con éxito.");
     }
 

@@ -1,6 +1,6 @@
 package com.miguel.web.controllers;
 
-import com.miguel.persistence.entities.user.User;
+import com.miguel.persistence.entities.Usuario;
 import com.miguel.services.AnotacionService;
 import com.miguel.services.GrupoService;
 import com.miguel.services.dtos.AnotacionDto;
@@ -22,31 +22,31 @@ public class AdminAnotacionController {
 
     // CRUDs ADMIN
     @GetMapping
-    public ResponseEntity<?> getAllAnotaciones(@AuthenticationPrincipal User user){
-        return ResponseEntity.ok(this.anotacionService.findAll(user));
+    public ResponseEntity<?> getAllAnotaciones(){
+        return ResponseEntity.ok(this.anotacionService.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getAnotacion(@PathVariable int id, @AuthenticationPrincipal User user){
-        return ResponseEntity.ok(anotacionService.findByIdAdmin(id, user));
+    public ResponseEntity<?> getAnotacion(@PathVariable int id){
+        return ResponseEntity.ok(anotacionService.findByIdAdmin(id));
     }
 
     // Aux por grupoService
     @PostMapping
     public ResponseEntity<?> createAnotacionAdmin(@RequestParam int idGrupo, @RequestParam int idUsuario,
-                                                  @RequestBody AnotacionDto anotacionRequest, @AuthenticationPrincipal User user){
-        return ResponseEntity.ok(this.grupoService.createAnotacionAdmin(idGrupo, idUsuario, anotacionRequest, user));
+                                                  @RequestBody AnotacionDto anotacionRequest){
+        return ResponseEntity.ok(this.grupoService.createAnotacionAdmin(idGrupo, idUsuario, anotacionRequest));
     }
 
     @PutMapping("/{idAnotacion}")
     public ResponseEntity<?> updateAnotacionAdmin(@PathVariable int idAnotacion,@RequestParam int idGrupo, @RequestParam int idUsuario,
-                                                  @RequestBody AnotacionDto anotacionRequest, @AuthenticationPrincipal User user){
-        return ResponseEntity.ok(this.grupoService.updateAnotacionAdmin(idAnotacion, idGrupo, idUsuario, anotacionRequest, user));
+                                                  @RequestBody AnotacionDto anotacionRequest){
+        return ResponseEntity.ok(this.grupoService.updateAnotacionAdmin(idAnotacion, idGrupo, idUsuario, anotacionRequest));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAnotacion(@PathVariable int id, @AuthenticationPrincipal User user){
-        this.anotacionService.deleteAdmin(id, user);
+    public ResponseEntity<?> deleteAnotacion(@PathVariable int id){
+        this.anotacionService.deleteAdmin(id);
         return ResponseEntity.ok("Anotación " + id + " eliminada con éxito.");
     }
 

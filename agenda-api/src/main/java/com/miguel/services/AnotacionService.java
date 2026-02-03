@@ -2,8 +2,7 @@ package com.miguel.services;
 
 import com.miguel.persistence.entities.Anotacion;
 import com.miguel.persistence.repositories.AnotacionRepository;
-import com.miguel.persistence.entities.user.Role;
-import com.miguel.persistence.entities.user.User;
+import com.miguel.persistence.entities.Usuario;
 import com.miguel.services.dtos.AnotacionDto;
 import com.miguel.services.exceptions.AnotacionException;
 import com.miguel.services.exceptions.AnotacionNotFoundException;
@@ -11,6 +10,7 @@ import com.miguel.services.exceptions.EmptyTextException;
 import com.miguel.services.exceptions.WrongUserException;
 import com.miguel.services.mappers.AnotacionMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,29 +21,32 @@ public class AnotacionService {
     @Autowired
     private AnotacionRepository anotacionRepository;
 
+    // --- MÉTODOS AUXILIARES ---
+
+    private boolean isAdmin() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    // ==========================================
+    // SECCIÓN USER (Llamados desde GrupoService)
+    // ==========================================
+
     public List<AnotacionDto> findByGrupo(int idGrupo){
+        // Seguridad garantizada por GrupoService.validarPropiedadGrupo
         return anotacionRepository.findByIdGrupo(idGrupo).stream()
                 .map(AnotacionMapper::toDto)
                 .toList();
     }
 
     public AnotacionDto findById(int idGrupo, int idAnotacion){
-        if (!this.anotacionRepository.existsByIdAndIdGrupo(idAnotacion, idGrupo)){
-            throw new AnotacionNotFoundException("Anotacion no encontrada");
-        }
-        return AnotacionMapper.toDto(anotacionRepository.findByIdAndIdGrupo(idAnotacion, idGrupo).get());
+        return anotacionRepository.findByIdAndIdGrupo(idAnotacion, idGrupo)
+                .map(AnotacionMapper::toDto)
+                .orElseThrow(() -> new AnotacionNotFoundException("Anotación no encontrada en este grupo"));
     }
 
     public AnotacionDto createAnotacion(int idGrupo, AnotacionDto anotacionRequest){
-        if(anotacionRequest.getFecha() == null){
-            throw new AnotacionException("Indique una fecha válida.");
-        }
-        if (anotacionRepository.findByIdGrupoAndFecha(idGrupo, anotacionRequest.getFecha()).isPresent()){
-            throw new AnotacionException("Esta anotación ya existe (idGrupo y fecha).");
-        }
-        if (anotacionRequest.getTexto().isBlank()){
-            throw new EmptyTextException("No se puede guardar una anotación vacía.");
-        }
+        validarDatosAnotacion(idGrupo, anotacionRequest, true);
 
         Anotacion a = AnotacionMapper.toEntity(anotacionRequest);
         a.setId(0);
@@ -56,15 +59,11 @@ public class AnotacionService {
         if (idAnotacion != anotacionRequest.getId()){
             throw new AnotacionException("Los id del path y el body no coinciden.");
         }
-        if (!this.anotacionRepository.existsByIdAndIdGrupo(idAnotacion, idGrupo)){
-            throw new AnotacionNotFoundException("Anotacion no encontrada");
+        if (!anotacionRepository.existsByIdAndIdGrupo(idAnotacion, idGrupo)){
+            throw new AnotacionNotFoundException("Anotación no encontrada en este grupo");
         }
-        if(anotacionRequest.getFecha() == null){
-            throw new AnotacionException("Indique una fecha válida.");
-        }
-        if (anotacionRequest.getTexto().isBlank()){
-            throw new EmptyTextException("No se puede guardar una anotación vacía.");
-        }
+
+        validarDatosAnotacion(idGrupo, anotacionRequest, false);
 
         Anotacion a = AnotacionMapper.toEntity(anotacionRequest);
         a.setIdGrupo(idGrupo);
@@ -74,40 +73,52 @@ public class AnotacionService {
 
     public void delete(int idGrupo, int idAnotacion){
         if (!anotacionRepository.existsByIdAndIdGrupo(idAnotacion, idGrupo)){
-            throw new AnotacionNotFoundException("Anotacion no encontrada.");
+            throw new AnotacionNotFoundException("Anotación no encontrada en este grupo.");
         }
         anotacionRepository.deleteById(idAnotacion);
     }
 
-    // ADMIN
-    public List<AnotacionDto> findAll(User user){
-        if(user.getRole() != Role.ADMIN) {
-            throw new WrongUserException("Usuario no permitido");
-        }
+    // ==========================================
+    // SECCIÓN ADMIN (Acceso Directo)
+    // ==========================================
+
+    public List<AnotacionDto> findAllAdmin(){
+        if(!isAdmin()) throw new WrongUserException("Acceso denegado");
+
         return this.anotacionRepository.findAll().stream()
                 .map(AnotacionMapper::toDto)
                 .toList();
     }
 
-    public AnotacionDto findByIdAdmin(int id, User user){
-        if(user.getRole() != Role.ADMIN) {
-            throw new WrongUserException("Usuario no permitido");
-        }
-        if(!anotacionRepository.existsById(id)){
-            throw new AnotacionNotFoundException("Anotacion no encontrada.");
-        }
-        return AnotacionMapper.toDto(this.anotacionRepository.findById(id).get());
+    public AnotacionDto findByIdAdmin(int id){
+        if(!isAdmin()) throw new WrongUserException("Acceso denegado");
+
+        return anotacionRepository.findById(id)
+                .map(AnotacionMapper::toDto)
+                .orElseThrow(() -> new AnotacionNotFoundException("Anotación no encontrada."));
     }
 
-    //Reutilizamos create y update tras pasar por grupoService
+    public void deleteAdmin(int id){
+        if(!isAdmin()) throw new WrongUserException("Acceso denegado");
 
-    public void deleteAdmin(int id, User user){
-        if(user.getRole() != Role.ADMIN) {
-            throw new WrongUserException("Usuario no permitido");
-        }
         if(!anotacionRepository.existsById(id)){
-            throw new AnotacionNotFoundException("Anotacion no encontrada.");
+            throw new AnotacionNotFoundException("Anotación no encontrada.");
         }
         this.anotacionRepository.deleteById(id);
+    }
+
+    // --- VALIDACIONES DE NEGOCIO REUTILIZABLES ---
+
+    private void validarDatosAnotacion(int idGrupo, AnotacionDto dto, boolean esNuevo) {
+        if(dto.getFecha() == null){
+            throw new AnotacionException("Indique una fecha válida.");
+        }
+        if (dto.getTexto() == null || dto.getTexto().isBlank()){
+            throw new EmptyTextException("No se puede guardar una anotación vacía.");
+        }
+        // Solo validamos duplicados por fecha si es una anotación nueva
+        if (esNuevo && anotacionRepository.findByIdGrupoAndFecha(idGrupo, dto.getFecha()).isPresent()){
+            throw new AnotacionException("Ya existe una anotación para esta fecha en este grupo.");
+        }
     }
 }
