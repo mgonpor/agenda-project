@@ -2,7 +2,6 @@ package com.miguel.services;
 
 import com.miguel.persistence.entities.Anotacion;
 import com.miguel.persistence.repositories.AnotacionRepository;
-import com.miguel.persistence.entities.Usuario;
 import com.miguel.services.dtos.AnotacionDto;
 import com.miguel.services.exceptions.AnotacionException;
 import com.miguel.services.exceptions.AnotacionNotFoundException;
@@ -29,23 +28,23 @@ public class AnotacionService {
     }
 
     // ==========================================
-    // SECCIÓN USER (Llamados desde GrupoService)
+    // SECCIÓN USER (Llamados desde GrupoService o Controllers con validación)
     // ==========================================
 
-    public List<AnotacionDto> findByGrupo(int idGrupo){
+    public List<AnotacionDto> findByGrupoUser(int idGrupo){
         // Seguridad garantizada por GrupoService.validarPropiedadGrupo
         return anotacionRepository.findByIdGrupo(idGrupo).stream()
                 .map(AnotacionMapper::toDto)
                 .toList();
     }
 
-    public AnotacionDto findById(int idGrupo, int idAnotacion){
+    public AnotacionDto findByIdUser(int idGrupo, int idAnotacion){
         return anotacionRepository.findByIdAndIdGrupo(idAnotacion, idGrupo)
                 .map(AnotacionMapper::toDto)
                 .orElseThrow(() -> new AnotacionNotFoundException("Anotación no encontrada en este grupo"));
     }
 
-    public AnotacionDto createAnotacion(int idGrupo, AnotacionDto anotacionRequest){
+    public AnotacionDto createAnotacionUser(int idGrupo, AnotacionDto anotacionRequest){
         validarDatosAnotacion(idGrupo, anotacionRequest, true);
 
         Anotacion a = AnotacionMapper.toEntity(anotacionRequest);
@@ -55,7 +54,7 @@ public class AnotacionService {
         return AnotacionMapper.toDto(anotacionRepository.save(a));
     }
 
-    public AnotacionDto updateAnotacion(int idGrupo, int idAnotacion, AnotacionDto anotacionRequest){
+    public AnotacionDto updateAnotacionUser(int idGrupo, int idAnotacion, AnotacionDto anotacionRequest){
         if (idAnotacion != anotacionRequest.getId()){
             throw new AnotacionException("Los id del path y el body no coinciden.");
         }
@@ -71,7 +70,7 @@ public class AnotacionService {
         return AnotacionMapper.toDto(anotacionRepository.save(a));
     }
 
-    public void delete(int idGrupo, int idAnotacion){
+    public void deleteUser(int idGrupo, int idAnotacion){
         if (!anotacionRepository.existsByIdAndIdGrupo(idAnotacion, idGrupo)){
             throw new AnotacionNotFoundException("Anotación no encontrada en este grupo.");
         }
@@ -96,6 +95,32 @@ public class AnotacionService {
         return anotacionRepository.findById(id)
                 .map(AnotacionMapper::toDto)
                 .orElseThrow(() -> new AnotacionNotFoundException("Anotación no encontrada."));
+    }
+    
+    public AnotacionDto createAnotacionAdmin(int idGrupo, AnotacionDto anotacionRequest) {
+        if(!isAdmin()) throw new WrongUserException("Acceso denegado");
+        validarDatosAnotacion(idGrupo, anotacionRequest, true);
+        
+        Anotacion a = AnotacionMapper.toEntity(anotacionRequest);
+        a.setId(0); // Forzamos creación
+        a.setIdGrupo(idGrupo);
+        return AnotacionMapper.toDto(anotacionRepository.save(a));
+    }
+    
+    public AnotacionDto updateAnotacionAdmin(int idAnotacion, int idGrupo, AnotacionDto anotacionRequest) {
+        if(!isAdmin()) throw new WrongUserException("Acceso denegado");
+        if(idAnotacion != anotacionRequest.getId()) {
+            throw new AnotacionException("ID path y body no coinciden");
+        }
+        if(!anotacionRepository.existsById(idAnotacion)){
+             throw new AnotacionNotFoundException("Anotación no encontrada.");
+        }
+        
+        validarDatosAnotacion(idGrupo, anotacionRequest, false);
+        
+        Anotacion a = AnotacionMapper.toEntity(anotacionRequest);
+        a.setIdGrupo(idGrupo); 
+        return AnotacionMapper.toDto(anotacionRepository.save(a));
     }
 
     public void deleteAdmin(int id){

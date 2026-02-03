@@ -1,12 +1,10 @@
 package com.miguel.web.controllers;
 
-import com.miguel.persistence.entities.Usuario;
 import com.miguel.services.AnotacionService;
 import com.miguel.services.GrupoService;
 import com.miguel.services.dtos.AnotacionDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,7 +21,7 @@ public class AdminAnotacionController {
     // CRUDs ADMIN
     @GetMapping
     public ResponseEntity<?> getAllAnotaciones(){
-        return ResponseEntity.ok(this.anotacionService.findAll());
+        return ResponseEntity.ok(this.anotacionService.findAllAdmin());
     }
 
     @GetMapping("/{id}")

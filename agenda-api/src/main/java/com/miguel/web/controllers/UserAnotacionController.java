@@ -1,11 +1,9 @@
 package com.miguel.web.controllers;
 
-import com.miguel.persistence.entities.Usuario;
 import com.miguel.services.GrupoService;
 import com.miguel.services.dtos.AnotacionDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,30 +15,29 @@ public class UserAnotacionController {
 
     // CRUDs
     @GetMapping("/grupo/{idGrupo}")
-    public ResponseEntity<?> getAnotaciones(@PathVariable int idGrupo, @AuthenticationPrincipal Usuario usuario){
-        return ResponseEntity.ok(grupoService.findAnotacionesByGrupo(idGrupo, usuario.getId()));
+    public ResponseEntity<?> getAnotaciones(@PathVariable int idGrupo){
+        return ResponseEntity.ok(grupoService.findAnotacionesByGrupoUser(idGrupo));
     }
 
     @GetMapping("/grupo/{idGrupo}/{idAnotacion}")
-    public ResponseEntity<?> getAnotacion(@PathVariable int idGrupo, @PathVariable int idAnotacion, @AuthenticationPrincipal Usuario usuario){
-        return ResponseEntity.ok(grupoService.findAnotacion(idGrupo, idAnotacion, usuario.getId()));
+    public ResponseEntity<?> getAnotacion(@PathVariable int idGrupo, @PathVariable int idAnotacion){
+        return ResponseEntity.ok(grupoService.findAnotacionByIdUser(idGrupo, idAnotacion));
     }
 
     @PostMapping("/grupo/{idGrupo}")
-    public ResponseEntity<?> createAnotacion(@PathVariable int idGrupo, @RequestBody AnotacionDto anotacionRequest, @AuthenticationPrincipal Usuario usuario){
-        return ResponseEntity.ok(grupoService.createAnotacion(idGrupo, anotacionRequest, usuario.getId()));
+    public ResponseEntity<?> createAnotacion(@PathVariable int idGrupo, @RequestBody AnotacionDto anotacionRequest){
+        return ResponseEntity.ok(grupoService.createAnotacionUser(idGrupo, anotacionRequest));
     }
 
     @PutMapping("/grupo/{idGrupo}/{idAnotacion}")
     public ResponseEntity<?> updateAnotacion(@PathVariable int idGrupo, @PathVariable int idAnotacion,
-                                             @RequestBody AnotacionDto anotacionRequest, @AuthenticationPrincipal Usuario usuario){
-        return ResponseEntity.ok(grupoService.updateAnotacion(idGrupo, idAnotacion, anotacionRequest, usuario.getId()));
+                                             @RequestBody AnotacionDto anotacionRequest){
+        return ResponseEntity.ok(grupoService.updateAnotacionUser(idGrupo, idAnotacion, anotacionRequest));
     }
 
     @DeleteMapping("/{idGrupo}/{idAnotacion}")
-    public ResponseEntity<?> deleteAnotacion(@PathVariable int idGrupo, @PathVariable int idAnotacion,
-                                             @AuthenticationPrincipal Usuario usuario){
-        grupoService.deleteAnotacion(idGrupo, idAnotacion, usuario.getId());
+    public ResponseEntity<?> deleteAnotacion(@PathVariable int idGrupo, @PathVariable int idAnotacion){
+        grupoService.deleteAnotacionUser(idGrupo, idAnotacion);
         return ResponseEntity.ok("Anotación eliminada con éxito.");
     }
 

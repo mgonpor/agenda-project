@@ -8,14 +8,12 @@ import com.miguel.services.dtos.*;
 import com.miguel.services.exceptions.GrupoException;
 import com.miguel.services.exceptions.GrupoNotFoundException;
 import com.miguel.services.exceptions.UserNotFoundException;
-import com.miguel.services.exceptions.WrongUserException;
 import com.miguel.services.mappers.GrupoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class GrupoService {
@@ -43,7 +41,7 @@ public class GrupoService {
     /**
      * Verifica si el grupo pertenece al usuario o si es ADMIN.
      */
-    private void validarAccesoGrupo(int idGrupo) {
+    public void validarAccesoGrupo(int idGrupo) {
         if (isAdmin()) return; // Si es admin, tiene acceso total
 
         Usuario usuario = getUsuarioAutenticado();
@@ -95,53 +93,53 @@ public class GrupoService {
     // --- CLASES ---
     public List<ClaseResponse> findClasesByGrupoUser(int idGrupo) {
         validarAccesoGrupo(idGrupo); // Seguridad primero
-        return this.claseService.findByGrupo(idGrupo);
+        return this.claseService.findByGrupoUser(idGrupo);
     }
 
     public ClaseResponse findClaseByIdUser(int idGrupo, int idClase) {
         validarAccesoGrupo(idGrupo);
-        return this.claseService.findById(idGrupo, idClase);
+        return this.claseService.findByIdUser(idGrupo, idClase);
     }
 
     public ClaseResponse createClaseUser(int idGrupo, ClaseRequest request) {
         validarAccesoGrupo(idGrupo);
-        return this.claseService.create(idGrupo, request);
+        return this.claseService.createUser(idGrupo, request);
     }
 
     public ClaseResponse updateClaseUser(int idGrupo, int idClase, ClaseRequest request) {
         validarAccesoGrupo(idGrupo);
-        return this.claseService.update(idGrupo, idClase, request);
+        return this.claseService.updateUser(idGrupo, idClase, request, getUsuarioAutenticado().getId());
     }
 
     public void deleteClaseUser(int idGrupo, int idClase) {
         validarAccesoGrupo(idGrupo);
-        this.claseService.delete(idGrupo, idClase);
+        this.claseService.deleteUser(idGrupo, idClase);
     }
 
     // --- ANOTACIONES ---
     public List<AnotacionDto> findAnotacionesByGrupoUser(int idGrupo) {
         validarAccesoGrupo(idGrupo);
-        return this.anotacionService.findByGrupo(idGrupo);
+        return this.anotacionService.findByGrupoUser(idGrupo);
     }
 
     public AnotacionDto findAnotacionByIdUser(int idGrupo, int idAnotacion) {
         validarAccesoGrupo(idGrupo);
-        return this.anotacionService.findById(idGrupo, idAnotacion);
+        return this.anotacionService.findByIdUser(idGrupo, idAnotacion);
     }
 
     public AnotacionDto createAnotacionUser(int idGrupo, AnotacionDto request) {
         validarAccesoGrupo(idGrupo);
-        return this.anotacionService.createAnotacion(idGrupo, request);
+        return this.anotacionService.createAnotacionUser(idGrupo, request);
     }
 
     public AnotacionDto updateAnotacionUser(int idGrupo, int idAnotacion, AnotacionDto request) {
         validarAccesoGrupo(idGrupo);
-        return this.anotacionService.updateAnotacion(idGrupo, idAnotacion, request);
+        return this.anotacionService.updateAnotacionUser(idGrupo, idAnotacion, request);
     }
 
     public void deleteAnotacionUser(int idGrupo, int idAnotacion) {
         validarAccesoGrupo(idGrupo);
-        this.anotacionService.delete(idGrupo, idAnotacion);
+        this.anotacionService.deleteUser(idGrupo, idAnotacion);
     }
 
     // ==========================================
@@ -200,21 +198,37 @@ public class GrupoService {
         grupoRepository.deleteById(idGrupo);
         return nombre;
     }
-
-    public List<GrupoResponse> findGruposByNombreAdmin(String nombre) {
-        // Búsqueda global para el admin
-        return grupoRepository.findByNombreContainingIgnoreCase(nombre).stream()
-                .map(GrupoMapper::toDto).toList();
+    
+    // Create/Update Admin proxies with validation
+    
+    public ClaseResponse createClaseAdmin(int idGrupo, int idUsuario, ClaseRequest request) {
+        if(!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)){
+             throw new com.miguel.services.exceptions.GrupoNotFoundException("El grupo no pertenece al usuario indicado.");
+        }
+        return this.claseService.createAdmin(idGrupo, request);
+    }
+    
+    public ClaseResponse updateClaseAdmin(int idClase, int idGrupo, int idUsuario, ClaseRequest request) {
+         if(!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)){
+             throw new com.miguel.services.exceptions.GrupoNotFoundException("El grupo no pertenece al usuario indicado.");
+        }
+        return this.claseService.updateAdmin(idClase, idGrupo, idUsuario, request);
+    }
+    
+    public AnotacionDto createAnotacionAdmin(int idGrupo, int idUsuario, AnotacionDto request){
+         if(!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)){
+             throw new com.miguel.services.exceptions.GrupoNotFoundException("El grupo no pertenece al usuario indicado.");
+        }
+        return this.anotacionService.createAnotacionAdmin(idGrupo, request);
+    }
+    
+    public AnotacionDto updateAnotacionAdmin(int idAnotacion, int idGrupo, int idUsuario, AnotacionDto request) {
+         if(!grupoRepository.existsByIdAndIdUsuario(idGrupo, idUsuario)){
+             throw new com.miguel.services.exceptions.GrupoNotFoundException("El grupo no pertenece al usuario indicado.");
+        }
+        return this.anotacionService.updateAnotacionAdmin(idAnotacion, idGrupo, request);
     }
 
-    // --- Sub-recursos para ADMIN (Acceso a cualquier grupo) ---
 
-    public List<ClaseResponse> findClasesByGrupoAdmin(int idGrupo) {
-        return this.claseService.findByGrupo(idGrupo); // Sin validar propiedad
-    }
-
-    public List<AnotacionDto> findAnotacionesByGrupoAdmin(int idGrupo) {
-        return this.anotacionService.findByGrupo(idGrupo); // Sin validar propiedad
-    }
 
 }

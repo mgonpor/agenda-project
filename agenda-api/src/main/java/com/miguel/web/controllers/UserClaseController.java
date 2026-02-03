@@ -1,11 +1,9 @@
 package com.miguel.web.controllers;
 
-import com.miguel.persistence.entities.Usuario;
 import com.miguel.services.GrupoService;
 import com.miguel.services.dtos.ClaseRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,36 +16,33 @@ public class UserClaseController {
     //CRUDs
     // findAll
     @GetMapping("/grupo/{idGrupo}")
-    public ResponseEntity<?> getClasesByIdGrupo(@PathVariable int idGrupo, @AuthenticationPrincipal Usuario usuario){
-        return ResponseEntity.ok(grupoService.findClasesByGrupo(idGrupo, usuario.getId()));
+    public ResponseEntity<?> getClasesByIdGrupo(@PathVariable int idGrupo){
+        return ResponseEntity.ok(grupoService.findClasesByGrupoUser(idGrupo));
     }
 
     //findById
     @GetMapping("/grupo/{idGrupo}/{idClase}")
-    public ResponseEntity<?> getClaseById(@PathVariable int idGrupo, @PathVariable int idClase,
-                                          @AuthenticationPrincipal Usuario usuario){
-        return ResponseEntity.ok(grupoService.findClase(idGrupo, idClase, usuario.getId()));
+    public ResponseEntity<?> getClaseById(@PathVariable int idGrupo, @PathVariable int idClase){
+        return ResponseEntity.ok(grupoService.findClaseByIdUser(idGrupo, idClase));
     }
 
     //create
     @PostMapping("/grupo/{idGrupo}")
-    public ResponseEntity<?> createClase(@PathVariable int idGrupo, @RequestBody ClaseRequest claseRequest,
-                                         @AuthenticationPrincipal Usuario usuario) {
-        return ResponseEntity.ok(grupoService.createClase(idGrupo, claseRequest, usuario.getId()));
+    public ResponseEntity<?> createClase(@PathVariable int idGrupo, @RequestBody ClaseRequest claseRequest) {
+        return ResponseEntity.ok(grupoService.createClaseUser(idGrupo, claseRequest));
     }
 
     //update
     @PutMapping("/grupo/{idGrupo}/{idClase}")
     public ResponseEntity<?> updateClase(@PathVariable int idGrupo, @PathVariable int idClase,
-                                         @RequestBody ClaseRequest claseRequest, @AuthenticationPrincipal Usuario usuario) {
-        return ResponseEntity.ok(grupoService.updateClase(idGrupo, idClase, claseRequest, usuario.getId()));
+                                         @RequestBody ClaseRequest claseRequest) {
+        return ResponseEntity.ok(grupoService.updateClaseUser(idGrupo, idClase, claseRequest));
     }
 
     //delete
     @DeleteMapping("/grupo/{idGrupo}/{idClase}")
-    public ResponseEntity<?> deleteClase(@PathVariable int idGrupo, @PathVariable int idClase,
-                                         @AuthenticationPrincipal Usuario usuario) {
-        this.grupoService.deleteClase(idGrupo, idClase, usuario.getId());
+    public ResponseEntity<?> deleteClase(@PathVariable int idGrupo, @PathVariable int idClase) {
+        this.grupoService.deleteClaseUser(idGrupo, idClase);
         return ResponseEntity.ok("Clase " + idClase + " eliminada con éxito.");
     }
 

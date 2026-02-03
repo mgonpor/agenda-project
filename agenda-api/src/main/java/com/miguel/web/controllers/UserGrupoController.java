@@ -1,13 +1,11 @@
 package com.miguel.web.controllers;
 
-import com.miguel.persistence.entities.Usuario;
 import com.miguel.services.GrupoService;
 import com.miguel.services.dtos.GrupoRequest;
 import com.miguel.services.dtos.GrupoResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

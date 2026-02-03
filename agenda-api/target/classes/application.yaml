@@ -26,7 +26,12 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
 jwt:
-  secret: ${JWT_SECRET:'secretaAtotalAsuperAsecretaAotraAmasA32Achar'}
-  expiration: 86400000  # 24 horas en ms
+  secret: clave_super_secreta
+  access:
+    expires: 3600000
+  refresh:
+    expires: 604800000
+  issuer: agenda-api
+  # 24 horas en ms
 
 frontend.url: ${FRONTEND_URL:'localhost:8081'}
