@@ -1,0 +1,18 @@
+<div class="toast-container">
+    @for (toast of toasts(); track toast.id) {
+    <div class="toast" [ngClass]="toast.type">
+        <div class="toast-content">
+            @if (toast.type === 'error') {
+            <span class="icon">❌</span>
+            } @else if (toast.type === 'success') {
+            <span class="icon">✅</span>
+            } @else if (toast.type === 'warning') {
+            <span class="icon">⚠️</span>
+            } @else {
+            <span class="icon">ℹ️</span>
+            }
+            <span class="message">{{ toast.message }}</span>
+        </div>
+    </div>
+    }
+</div>
