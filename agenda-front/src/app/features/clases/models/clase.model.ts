@@ -1,3 +1,10 @@
+export interface ClaseRequest {
+    id: number;
+    diaSemana: string;
+    tramo: number;
+    aula: string;
+}
+
 export interface ClaseResponse {
     id: number;
     idGrupo: number; // Relación con el grupo
