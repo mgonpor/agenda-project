@@ -39,9 +39,18 @@ export class GrupoService {
     return this.http.get<GrupoResponse[]>(this.ADMIN_URL);
   }
 
+  getGrupoAdmin(id: number): Observable<GrupoResponse> {
+    return this.http.get<GrupoResponse>(`${this.ADMIN_URL}/${id}`);
+  }
+
   createGrupoAdmin(grupo: GrupoRequest, idUsuario: number): Observable<any> {
     const params = new HttpParams().set('idUsuario', idUsuario.toString());
     return this.http.post(this.ADMIN_URL, grupo, { params });
+  }
+
+  updateGrupoAdmin(id: number, grupo: GrupoRequest, idUsuario: number): Observable<any> {
+    const params = new HttpParams().set('idUsuario', idUsuario.toString());
+    return this.http.put(`${this.ADMIN_URL}/${id}`, grupo, { params });
   }
 
   deleteGrupoAdmin(id: number): Observable<string> {

@@ -7,7 +7,23 @@ import { Router } from "@angular/router";
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
     const authService = inject(AuthService);
     const router = inject(Router);
-    const token = authService.authStatus().token;
+    const { token, rol } = authService.authStatus();
+
+    // 1. MAPEADO DE SEGURIDAD (Configuración automática)
+    const roleRules: Record<string, string> = {
+        '/admin/': 'ADMIN',
+        // Puedes añadir más: '/editor/': 'EDITOR'
+    };
+
+    // 2. VERIFICACIÓN DE ROL PRE-VUELO
+    // Buscamos si la URL de la petición coincide con alguna regla de rol
+    const requiredRole = Object.keys(roleRules).find(path => req.url.includes(path));
+
+    if (requiredRole && rol !== roleRules[requiredRole]) {
+        console.error(`Bloqueo Interceptor: Se requiere ${roleRules[requiredRole]} pero eres ${rol}`);
+        // Opcional: Redirigir o lanzar error. Aquí simplemente cancelamos.
+        return throwError(() => new Error('Acceso denegado por falta de privilegios.'));
+    }
 
     // Clonamos la petición para añadir el header si hay token
     let authReq = req;
