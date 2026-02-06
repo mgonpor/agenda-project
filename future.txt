@@ -1,0 +1,11 @@
+He analizado todo el proyecto front a conciencia. Tienes una infraestructura sólida (rutas, guardianes, interceptores, servicios con sus mocks y sistema de notificaciones), pero para que la aplicación sea funcional antes de entrar en HTML/CSS, te falta el "pegamento" en los componentes.
+
+Aquí tienes la lista de lo que falta a nivel de lógica funcional (TypeScript):
+
+Lógica de Autenticación en Componentes: Los componentes Login y Register están vacíos. Necesitan integrar los formularios y llamar al AuthService para gestionar el inicio de sesión y la redirección.
+Integración del Menú Dinámico: El Sidebar y Navbar no inyectan el NavigationService. Aunque el servicio ya filtra los links por rol, los componentes aún no los consumen para mostrarlos.
+Petición de Datos en Listas: GruposList, ClasesList y AnotacionesList son esqueletos. Necesitan inyectar sus servicios y llamar a los métodos de carga (los mocks que cree) en el ngOnInit.
+Gestión de Formularios (CRUD): No hay lógica de ReactiveFormsModule para crear o editar grupos/clases/anotaciones. Sin esto, los métodos create y update de tus servicios no se pueden usar desde la UI.
+Estado del Dashboard: El UserDashboard está completamente vacío a nivel de lógica.
+Importaciones en Componentes: Al ser standalone, los componentes necesitan declarar sus imports (CommonModule, RouterLink, etc.) para que funcionen las directivas básicas de Angular.
+En resumen: tienes los "cimientos" (servicios e infraestructura) listos, pero las "habitaciones" (componentes) están vacías, sin conexión con esos cimientos. Falta inyectar los servicios y manejar la lógica de datos en los archivos .ts.
