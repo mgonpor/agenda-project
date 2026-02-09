@@ -4,7 +4,7 @@ services:
     container_name: agenda-db
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS}
-      MYSQL_DATABASE: agenda
+      MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASS}
     ports:
@@ -12,11 +12,11 @@ services:
     volumes:
       - dbdata:/var/lib/mysql/data
     healthcheck:
-      test: [ "CMD", "mariadb-admin", "ping", "-h", "localhost" ]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
-      
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: agenda-pmy
